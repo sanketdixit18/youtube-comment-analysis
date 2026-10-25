@@ -1,0 +1,27 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Large ML artifacts
+data/training_data.csv
+models/*.pkl
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube Sentiment Analyzer</title>
+  <meta name="description" content="Analyze YouTube comment sentiment with Natural Language Processing: TF-IDF and Logistic Regression.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M12 9.5v13l11-6.5z' fill='white'/%3E%3C/svg%3E">
+  <!-- Applies the saved theme before the page paints (prevents a light/dark flash) -->
+  <script src="/static/js/theme-init.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ===================== Top bar ===================== -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#top" aria-label="YouTube Sentiment Analyzer - home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>
+        </span>
+        <span class="brand-name">Sentiment<span>IQ</span></span>
+      </a>
+
+      <nav id="siteNav" class="nav" aria-label="Main">
+        <a href="#analyze">Analyze</a>
+        <a href="#try">Try a comment</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#about">About</a>
+        <a href="#model">Model</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button id="themeToggle" class="icon-btn" type="button" aria-label="Switch to dark mode" title="Toggle dark / light mode">
+          <svg class="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <button id="menuToggle" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ===================== Hero + input ===================== -->
+    <section class="hero" id="analyze" aria-labelledby="pageTitle">
+      <div class="container hero-inner">
+        <p class="eyebrow">NLP project &middot; TF-IDF + Logistic Regression</p>
+        <h1 id="pageTitle">YouTube Sentiment Analyzer</h1>
+        <p class="subtitle">Analyze audience opinions using Natural Language Processing</p>
+
+        <div class="card input-card">
+          <form id="analyzeForm" novalidate>
+            <label for="urlInput" class="field-label">YouTube video URL</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+              <input id="urlInput" name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false"
+                     maxlength="500" placeholder="{{ example_url }}" aria-describedby="modeHint">
+            </div>
+
+            <div class="controls">
+              <button id="analyzeBtn" class="btn btn-primary" type="submit">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+                Analyze Video
+              </button>
+              <button id="demoBtn" class="btn btn-secondary" type="button">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+                Demo Mode
+              </button>
+              <label class="select-inline" for="maxComments">
+                <span>Max comments</span>
+                <select id="maxComments">
+                  <option value="100">100</option>
+                  <option value="200" selected>200</option>
+                  <option value="300">300</option>
+                  <option value="500">500</option>
+                </select>
+              </label>
+              <button id="exampleBtn" class="link-btn" type="button">Use example URL</button>
+            </div>
+          </form>
+
+          <div class="mode-row">
+            <span id="apiPill" class="pill pill-muted">Checking server&hellip;</span>
+            <p id="modeHint" class="mode-hint">
+              <strong>Demo Mode</strong> uses a built-in sample dataset and needs no API key.
+              <strong>Analyze Video</strong> reads real comments through the YouTube API.
+            </p>
+          </div>
+
+          <div id="errorBox" class="alert alert-error" role="alert" hidden></div>
+
+          <div id="loading" class="loading" hidden role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <div class="loading-body">
+              <strong id="loadingTitle">Analyzing comments&hellip;</strong>
+              <ol class="loading-steps" id="loadingSteps" aria-hidden="true">
+                <li>Fetch comments</li>
+                <li>Clean text</li>
+                <li>TF-IDF</li>
+                <li>Predict</li>
+                <li>Build dashboard</li>
+              </ol>
+              <div class="progress" aria-hidden="true"><span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <!-- ===================== Empty state ===================== -->
+      <section id="emptyState" class="card empty-state" aria-labelledby="emptyTitle">
+        <svg viewBox="0 0 120 90" width="120" height="90" aria-hidden="true">
+          <rect x="8" y="48" width="18" height="34" rx="5" class="ill-a"/>
+          <rect x="34" y="26" width="18" height="56" rx="5" class="ill-b"/>
+          <rect x="60" y="38" width="18" height="44" rx="5" class="ill-c"/>
+          <rect x="86" y="12" width="18" height="70" rx="5" class="ill-a"/>
+          <path d="M4 86h112" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".25"/>
+        </svg>
+        <h2 id="emptyTitle">No analysis yet</h2>
+        <p>Paste a YouTube link above, or press <strong>Demo Mode</strong> to explore the dashboard with sample comments.</p>
+        <button id="emptyDemoBtn" class="btn btn-primary" type="button">Try Demo Mode</button>
+      </section>
+
+      <!-- ===================== Results ===================== -->
+      <section id="results" class="results" aria-labelledby="resultsTitle" hidden>
+        <div class="section-head">
+          <h2 id="resultsTitle">Analysis results</h2>
+          <span id="modeBadge" class="badge"></span>
+        </div>
+
+        <div id="noticeBox" class="alert alert-info" role="status" hidden></div>
+
+        <article class="card video-card" aria-label="Video details">
+          <img id="videoThumb" alt="" width="160" height="90" hidden>
+          <div class="video-text">
+            <h3 id="videoTitle"></h3>
+            <p id="videoMeta" class="muted"></p>
+          </div>
+        </article>
+
+        <!-- Summary cards -->
+        <div class="stat-grid" aria-label="Summary">
+          <div class="card stat stat-total">
+            <span class="stat-label">Total Comments</span>
+            <strong class="stat-value" id="statTotal">0</strong>
+            <span class="stat-sub" id="statTotalSub"></span>
+          </div>
+          <div class="card stat stat-pos">
+            <span class="stat-label"><i aria-hidden="true">&#9650;</i> Positive</span>
+            <strong class="stat-value" id="statPositive">0</strong>
+            <span class="stat-sub" id="statPositiveSub"></span>
+          </div>
+          <div class="card stat stat-neg">
+            <span class="stat-label"><i aria-hidden="true">&#9660;</i> Negative</span>
+            <strong class="stat-value" id="statNegative">0</strong>
+            <span class="stat-sub" id="statNegativeSub"></span>
+          </div>
+          <div class="card stat stat-neu">
+            <span class="stat-label"><i aria-hidden="true">&#9679;</i> Neutral</span>
+            <strong class="stat-value" id="statNeutral">0</strong>
+            <span class="stat-sub" id="statNeutralSub"></span>
+          </div>
+          <div class="card stat stat-overall" id="statOverallCard">
+            <span class="stat-label">Overall Sentiment</span>
+            <strong class="stat-value" id="statOverall">-</strong>
+            <span class="stat-sub" id="statOverallSub"></span>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid-2">
+          <article class="card">
+            <h3 class="card-title">Sentiment Distribution</h3>
+            <div class="chart-box"><canvas id="doughnutChart" role="img" aria-label="Doughnut chart of positive, negative and neutral comments"></canvas></div>
+          </article>
+          <article class="card">
+            <h3 class="card-title">Sentiment Bar Chart</h3>
+            <div class="chart-box"><canvas id="barChart" role="img" aria-label="Bar chart with the number of comments for each sentiment"></canvas></div>
+          </article>
+        </div>
+
+        <article class="card">
+          <h3 class="card-title">Sentiment Percentage</h3>
+          <div id="percentList" class="percent-list"></div>
+          <p id="avgConfidence" class="muted small"></p>
+        </article>
+
+        <!-- Insights -->
+        <div class="section-head section-gap">
+          <h2 id="insightsTitle">Comment Insights</h2>
+          <p class="muted">Calculated from the words in the analyzed comments (each word counted once per comment).</p>
+        </div>
+        <div class="grid-3">
+          <article class="card word-card">
+            <h3 class="card-title"><span class="dot dot-pos"></span> Most common positive words</h3>
+            <ol id="posWords" class="word-list"></ol>
+          </article>
+          <article class="card word-card">
+            <h3 class="card-title"><span class="dot dot-neg"></span> Most common negative words</h3>
+            <ol id="negWords" class="word-list"></ol>
+          </article>
+          <article class="card word-card">
+            <h3 class="card-title"><span class="dot dot-all"></span> Most common words overall</h3>
+            <ol id="allWords" class="word-list"></ol>
+          </article>
+        </div>
+        <div class="grid-2">
+          <article class="card">
+            <div class="card-head">
+              <h3 class="card-title">Word frequency</h3>
+              <div class="tabs" role="tablist" aria-label="Word frequency source">
+                <button class="tab is-active" role="tab" aria-selected="true" data-words="overall_words" type="button">Overall</button>
+                <button class="tab" role="tab" aria-selected="false" data-words="positive_words" type="button">Positive</button>
+                <button class="tab" role="tab" aria-selected="false" data-words="negative_words" type="button">Negative</button>
+              </div>
+            </div>
+            <div class="chart-box chart-box-tall"><canvas id="wordChart" role="img" aria-label="Horizontal bar chart of the most frequent words"></canvas></div>
+            <p id="wordChartEmpty" class="list-empty" hidden>Not enough words for this group yet.</p>
+          </article>
+          <article class="card">
+            <h3 class="card-title">Word cloud</h3>
+            <div id="wordCloud" class="word-cloud" role="img" aria-label="Word cloud of the most frequent words, coloured by sentiment"></div>
+            <p class="legend small muted">
+              <span><i class="dot dot-pos"></i> mostly positive</span>
+              <span><i class="dot dot-neg"></i> mostly negative</span>
+              <span><i class="dot dot-neu"></i> mostly neutral</span>
+            </p>
+          </article>
+        </div>
+
+        <!-- Comment table -->
+        <article class="card" id="comments" aria-labelledby="tableTitle">
+          <div class="card-head">
+            <h3 class="card-title" id="tableTitle">Analyzed comments</h3>
+            <button id="exportBtn" class="btn btn-ghost btn-sm" type="button">Download CSV</button>
+          </div>
+
+          <div class="table-tools">
+            <div class="search">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input id="searchInput" type="search" placeholder="Search comments&hellip;" aria-label="Search comments" autocomplete="off">
+            </div>
+            <div class="chips" id="filterChips" role="group" aria-label="Filter by sentiment">
+              <button class="chip is-active" data-filter="All" type="button" aria-pressed="true">All</button>
+              <button class="chip" data-filter="Positive" type="button" aria-pressed="false">Positive</button>
+              <button class="chip" data-filter="Negative" type="button" aria-pressed="false">Negative</button>
+              <button class="chip" data-filter="Neutral" type="button" aria-pressed="false">Neutral</button>
+            </div>
+            <label class="select-inline" for="sortSelect">
+              <span>Sort</span>
+              <select id="sortSelect">
+                <option value="original">Original order</option>
+                <option value="conf-desc">Confidence: high to low</option>
+                <option value="conf-asc">Confidence: low to high</option>
+                <option value="sentiment">Sentiment</option>
+                <option value="text">Comment A-Z</option>
+              </select>
+            </label>
+            <label class="select-inline" for="pageSize">
+              <span>Rows</span>
+              <select id="pageSize">
+                <option value="10" selected>10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table id="commentsTable">
+              <thead>
+                <tr><th class="col-num" scope="col">#</th><th scope="col">Comment</th><th scope="col">Sentiment</th><th scope="col">Confidence</th></tr>
+              </thead>
+              <tbody id="commentsBody"></tbody>
+            </table>
+          </div>
+          <div id="tableEmpty" class="table-empty" hidden>
+            <strong>No comments match your search.</strong>
+            <span class="muted">Try a different word or clear the filter.</span>
+          </div>
+          <div class="pagination">
+            <span id="pageInfo" class="muted small"></span>
+            <div id="pageButtons" class="page-buttons"></div>
+          </div>
+        </article>
+      </section>
+
+      <!-- ===================== Analyze a single comment ===================== -->
+      <section id="try" class="section" aria-labelledby="tryTitle">
+        <div class="section-head">
+          <h2 id="tryTitle">Analyze a Comment</h2>
+          <p class="muted">Type or paste any text and see how the trained model classifies it.</p>
+        </div>
+        <div class="card try-card">
+          <form id="commentForm" novalidate>
+            <label for="commentInput" class="field-label">Your comment</label>
+            <textarea id="commentInput" rows="5" maxlength="2000"
+                      placeholder="I really enjoyed this video. The explanation was excellent!"></textarea>
+            <div class="textarea-foot">
+              <div class="chips" aria-label="Example comments">
+                <button class="chip" type="button" data-example="I really enjoyed this video. The explanation was excellent!">Positive example</button>
+                <button class="chip" type="button" data-example="Waste of time. Terrible audio and the title was clickbait.">Negative example</button>
+                <button class="chip" type="button" data-example="What software is used at 3:45?">Neutral example</button>
+              </div>
+              <span id="charCount" class="muted small">0 / 2000</span>
+            </div>
+            <button id="commentBtn" class="btn btn-primary" type="submit">Analyze Sentiment</button>
+          </form>
+
+          <div id="commentResult" class="comment-result" aria-live="polite">
+            <div class="result-empty">
+              <strong>Result will appear here</strong>
+              <span class="muted">Sentiment, confidence and the words that influenced the model.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== How it works ===================== -->
+      <section id="how-it-works" class="section" aria-labelledby="howTitle">
+        <div class="section-head">
+          <h2 id="howTitle">How It Works</h2>
+          <p class="muted">From raw comments to a sentiment dashboard in six steps.</p>
+        </div>
+        <ol class="pipeline">
+          <li class="step">
+            <span class="step-num">1</span>
+            <div><h3>YouTube Comments</h3><p>Comments are fetched with the YouTube Data API, or loaded from the sample dataset in Demo Mode.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-num">2</span>
+            <div><h3>Text Preprocessing</h3><p>Lowercase, remove URLs and punctuation, fix contractions, drop stopwords but keep words like &ldquo;not&rdquo;.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-num">3</span>
+            <div><h3>TF-IDF Vectorization</h3><p>Each comment becomes a list of numbers that show how important each word is.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-num">4</span>
+            <div><h3>Machine Learning Model</h3><p>A Logistic Regression model, trained on labelled comments, scores the three classes.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-num">5</span>
+            <div><h3>Sentiment Classification</h3><p>The class with the highest probability wins and that probability is the confidence.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-num">6</span>
+            <div><h3>Analytics Dashboard</h3><p>Counts, charts, word insights and a searchable table summarise the audience opinion.</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ===================== About ===================== -->
+      <section id="about" class="section" aria-labelledby="aboutTitle">
+        <div class="section-head">
+          <h2 id="aboutTitle">About the Project</h2>
+          <p class="muted">The key ideas behind this application, in plain language.</p>
+        </div>
+        <div class="grid-3 about-grid">
+          <article class="card about-card">
+            <h3>What is NLP?</h3>
+            <p>Natural Language Processing is the area of AI that teaches computers to read, understand and work with human language such as text and speech.</p>
+          </article>
+          <article class="card about-card">
+            <h3>What is sentiment analysis?</h3>
+            <p>It is an NLP task that decides what feeling a piece of text expresses: usually positive, negative or neutral.</p>
+          </article>
+          <article class="card about-card">
+            <h3>Why analyze YouTube comments?</h3>
+            <p>Comments show how real viewers feel. Creators and companies use them to find what people like, what annoys them and what to improve, without reading thousands of comments by hand.</p>
+          </article>
+          <article class="card about-card">
+            <h3>How does TF-IDF work?</h3>
+            <p><strong>TF</strong> (term frequency) counts how often a word appears in a comment. <strong>IDF</strong> (inverse document frequency) lowers the weight of words that appear in almost every comment. Words that are frequent here but rare elsewhere get a high score.</p>
+          </article>
+          <article class="card about-card">
+            <h3>How does the model work?</h3>
+            <p>Logistic Regression learns a weight for every word during training. For a new comment it adds up the weights, turns the totals into probabilities for each class, and picks the most probable class.</p>
+          </article>
+          <article class="card about-card">
+            <h3>What do the labels mean?</h3>
+            <p><span class="tag tag-pos">Positive</span> praise or enjoyment. <span class="tag tag-neg">Negative</span> criticism or dislike. <span class="tag tag-neu">Neutral</span> questions, facts or comments without a clear opinion.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===================== Model information ===================== -->
+      <section id="model" class="section" aria-labelledby="modelTitle">
+        <div class="section-head">
+          <h2 id="modelTitle">Model Information</h2>
+          <p class="muted">All numbers below are calculated from the held-out test set when the model was trained.</p>
+        </div>
+        <div id="modelInfo" class="card model-card">
+          <p class="muted">Loading model details&hellip;</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span>Built for a college NLP project &middot; FastAPI, scikit-learn and Chart.js</span>
+      <span><a href="/docs" target="_blank" rel="noopener">API documentation</a></span>
+    </div>
+  </footer>
+
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="/static/vendor/chart.umd.min.js"></script>
+  <script src="/static/js/script.js" defer></script>
+</body>
+</html>

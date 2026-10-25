@@ -1,0 +1,86 @@
+{
+  "trained_at": "2026-10-25T12:12:57+00:00",
+  "sklearn_version": "1.7.2",
+  "model_name": "Logistic Regression",
+  "vectorizer_name": "TF-IDF (unigrams + bigrams)",
+  "classes": [
+    "Positive",
+    "Negative",
+    "Neutral"
+  ],
+  "total_samples": 936089,
+  "train_samples": 748871,
+  "test_samples": 187218,
+  "vocabulary_size": 3969881,
+  "class_distribution": {
+    "Negative": 326815,
+    "Positive": 304749,
+    "Neutral": 304525
+  },
+  "accuracy": 0.7144291681355425,
+  "precision": 0.7133197278580853,
+  "recall": 0.7134505264571814,
+  "f1_score": 0.7125931479813153,
+  "weighted": {
+    "precision": 0.7132924010017974,
+    "recall": 0.7144291681355425,
+    "f1_score": 0.7130733842050502
+  },
+  "per_class": {
+    "Positive": {
+      "precision": 0.7430995511126676,
+      "recall": 0.7659228876127974,
+      "f1_score": 0.7543386226287044,
+      "support": 60950
+    },
+    "Negative": {
+      "precision": 0.7118715063625728,
+      "recall": 0.754019858329636,
+      "f1_score": 0.7323397426372255,
+      "support": 65363
+    },
+    "Neutral": {
+      "precision": 0.6849881260990156,
+      "recall": 0.6204088334291109,
+      "f1_score": 0.6511010786780164,
+      "support": 60905
+    }
+  },
+  "confusion_matrix": {
+    "labels": [
+      "Positive",
+      "Negative",
+      "Neutral"
+    ],
+    "matrix": [
+      [
+        46683,
+        6875,
+        7392
+      ],
+      [
+        6093,
+        49285,
+        9985
+      ],
+      [
+        10046,
+        13073,
+        37786
+      ]
+    ]
+  },
+  "cross_validation": {
+    "folds": 5,
+    "accuracy_mean": 0.7155206403982781,
+    "accuracy_std": 0.000639428663035296
+  },
+  "hyperparameters": {
+    "C": 4.0,
+    "class_weight": "balanced",
+    "ngram_range": [
+      1,
+      2
+    ]
+  }
+}
