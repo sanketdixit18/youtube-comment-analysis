@@ -71,20 +71,42 @@ class SentimentPredictor:
             ) from exc
 
     @classmethod
-    def _load(cls) -> "SentimentPredictor":
-        for path in (trainer.VECTORIZER_PATH, trainer.MODEL_PATH, trainer.METRICS_PATH):
-            if not path.exists():
-                raise FileNotFoundError(path.name)
-        metrics = json.loads(trainer.METRICS_PATH.read_text(encoding="utf-8"))
-        # Pickles are only guaranteed to load with the scikit-learn version that wrote them.
-        if metrics.get("sklearn_version") != sklearn.__version__:
-            raise RuntimeError(
-                f"saved with scikit-learn {metrics.get('sklearn_version')}, "
-                f"installed is {sklearn.__version__}"
+    # def _load(cls) -> "SentimentPredictor":
+    #     for path in (trainer.VECTORIZER_PATH, trainer.MODEL_PATH, trainer.METRICS_PATH):
+    #         if not path.exists():
+    #             raise FileNotFoundError(path.name)
+    #     metrics = json.loads(trainer.METRICS_PATH.read_text(encoding="utf-8"))
+    #     # Pickles are only guaranteed to load with the scikit-learn version that wrote them.
+    #     if metrics.get("sklearn_version") != sklearn.__version__:
+    #         raise RuntimeError(
+    #             f"saved with scikit-learn {metrics.get('sklearn_version')}, "
+    #             f"installed is {sklearn.__version__}"
+    #         )
+    #     vectorizer = joblib.load(trainer.VECTORIZER_PATH)
+    #     model = joblib.load(trainer.MODEL_PATH)
+    #     return cls(vectorizer, model, metrics)
+
+    @classmethod
+    def _load(cls):
+        if not trainer.VECTORIZER_PATH.exists():
+            raise FileNotFoundError("vectorizer.pkl not found")
+
+        if not trainer.MODEL_PATH.exists():
+            raise FileNotFoundError("sentiment_model.pkl not found")
+
+        # Metrics are optional for prediction
+        metrics = {}
+
+        if trainer.METRICS_PATH.exists():
+            metrics = json.loads(
+                trainer.METRICS_PATH.read_text(encoding="utf-8")
             )
+
         vectorizer = joblib.load(trainer.VECTORIZER_PATH)
         model = joblib.load(trainer.MODEL_PATH)
+
         return cls(vectorizer, model, metrics)
+
 
     # ------------------------------------------------------------------ #
     # Prediction
